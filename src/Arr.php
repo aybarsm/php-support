@@ -4,6 +4,16 @@ namespace Aybarsm\Support;
 
 class Arr
 {
+    public static function isAssoc(array $array) : bool
+    {
+        return ! array_is_list($array);
+    }
+
+    public static function isList(array $array) : bool
+    {
+        return array_is_list($array);
+    }
+
     public static function accessible(mixed $value) : bool
     {
         return is_array($value) || $value instanceof \ArrayAccess;
