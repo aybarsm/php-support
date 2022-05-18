@@ -1,0 +1,10 @@
+*
+!.gitignore
+!README.md
+!composer.json
+!/src
+!/src/*
+!/src/**/
+!/src/**/*
+/src/*.bak*
+/src/**/*.bak*
