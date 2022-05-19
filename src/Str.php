@@ -135,4 +135,11 @@ class Str
 
         return rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8')).$end;
     }
+
+    public static function remove(string|array $search, string $subject, bool $caseSensitive = true) : string
+    {
+        return $caseSensitive
+            ? str_replace($search, '', $subject)
+            : str_ireplace($search, '', $subject);
+    }
 }
