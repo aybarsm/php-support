@@ -124,19 +124,38 @@ class Arr
         return $results;
     }
 
-    public static function dot(iterable $array, string $prepend = '') : array
+    public static function dot(iterable $array, string $prepend = '', array $options = []) : array
     {
-        $results = [];
+        $optMeta = ($options['meta'] ?? null) === true;
+        $optAll = ($options['meta'] ?? null) === true;
+
+        $rtr = ['data' => [], 'meta' => []];
 
         foreach ($array as $key => $value) {
+            if ($optAll) $rtr['data'][$prepend.$key] = [];
+
+            if ($optMeta) {
+                $rtr['meta'][$prepend.$key] = [
+                    'type' => gettype($value),
+                        'isList' => is_array($value) && Arr::isList($value),
+                            'isEmpty' => empty($value)
+                ];
+            }
+
             if (is_array($value) && ! empty($value)) {
-                $results = array_merge($results, static::dot($value, $prepend.$key.'.'));
+                if ($optMeta){
+                    $extra = static::dot($value, $prepend.$key.'.', $options);
+                    $rtr['data'] = array_merge($rtr['data'], $extra['data']);
+                    $rtr['meta'] = array_merge($rtr['meta'], $extra['meta']);
+                }else {
+                    $rtr['data'] = array_merge($rtr['data'], static::dot($value, $prepend.$key.'.'), $options);
+                }
             } else {
-                $results[$prepend.$key] = $value;
+                $rtr['data'][$prepend.$key] = $value;
             }
         }
 
-        return $results;
+        return $optMeta ? $rtr : $rtr['data'];
     }
 
     public static function flatten(iterable $array, $depth = INF) : array
