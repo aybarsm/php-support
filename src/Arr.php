@@ -124,18 +124,23 @@ class Arr
         return $results;
     }
 
-    public static function dot(iterable $array, string $prepend = '', array $options = []) : array
+    public static function dot(iterable $array, array $opt = []) : array
     {
-        $optMeta = ($options['meta'] ?? null) === true;
-        $optAll = ($options['meta'] ?? null) === true;
+        $opt['prepend'] = (! is_string($opt['prepend'] ?? null) ? '' : $opt['prepend']);
+        $opt['meta'] = ($opt['meta'] ?? null) === true;
+        $opt['all'] = ($opt['all'] ?? null) === true;
+        $opt['sub'] = ($opt['sub'] ?? null) === true;
 
-        $rtr = ['data' => [], 'meta' => []];
+        if (!$opt['sub']) {
+            $opt['res'] = [];
+            if ($opt['meta']) $opt['metaData'] = [];
+        }
 
         foreach ($array as $key => $value) {
-            if ($optAll) $rtr['data'][$prepend.$key] = [];
+            if ($opt['all']) $opt['res']["{$opt['prepend']}{$key}"] = [];
 
-            if ($optMeta) {
-                $rtr['meta'][$prepend.$key] = [
+            if ($opt['meta']) {
+                $opt['metaData']["{$opt['prepend']}{$key}"] = [
                     'type' => gettype($value),
                         'isList' => is_array($value) && Arr::isList($value),
                             'isEmpty' => empty($value)
@@ -143,19 +148,15 @@ class Arr
             }
 
             if (is_array($value) && ! empty($value)) {
-                if ($optMeta){
-                    $extra = static::dot($value, $prepend.$key.'.', $options);
-                    $rtr['data'] = array_merge($rtr['data'], $extra['data']);
-                    $rtr['meta'] = array_merge($rtr['meta'], $extra['meta']);
-                }else {
-                    $rtr['data'] = array_merge($rtr['data'], static::dot($value, $prepend.$key.'.'), $options);
-                }
+                $sub = static::dot($value, array_merge($opt, ['prepend' => "{$opt['prepend']}{$key}.", 'sub' => true]));
+                $opt['res'] = array_merge($opt['res'], $sub['res']);
+                if ($opt['meta']) $opt['metaData'] = array_merge($opt['metaData'], $sub['metaData']);
             } else {
-                $rtr['data'][$prepend.$key] = $value;
+                $opt['res']["{$opt['prepend']}{$key}"] = $value;
             }
         }
 
-        return $optMeta ? $rtr : $rtr['data'];
+        return ($opt['sub'] ? $opt : ($opt['meta'] ? [$opt['res'], $opt['metaData']] : $opt['res']));
     }
 
     public static function flatten(iterable $array, $depth = INF) : array
