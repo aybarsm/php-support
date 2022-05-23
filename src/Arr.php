@@ -179,4 +179,319 @@ class Arr
 
         return $result;
     }
+
+    public static function has(array $array, string|array $keys) : bool
+    {
+        $keys = (array) $keys;
+
+        if (! $array || $keys === []) {
+            return false;
+        }
+
+        foreach ($keys as $key) {
+            $subKeyArray = $array;
+
+            if (static::exists($array, $key)) {
+                continue;
+            }
+
+            foreach (explode('.', $key) as $segment) {
+                if (static::accessible($subKeyArray) && static::exists($subKeyArray, $segment)) {
+                    $subKeyArray = $subKeyArray[$segment];
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static function hasAny(array $array, string|array $keys) : bool
+    {
+        $keys = (array) $keys;
+
+        if (! $array) {
+            return false;
+        }
+
+        if ($keys === []) {
+            return false;
+        }
+
+        foreach ($keys as $key) {
+            if (static::has($array, $key)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function first(array $array, callable $callback = null, $default = null) : mixed
+    {
+        if (is_null($callback)) {
+            if (empty($array)) {
+                return value($default);
+            }
+
+            foreach ($array as $item) {
+                return $item;
+            }
+        }
+
+        foreach ($array as $key => $value) {
+            if ($callback($value, $key)) {
+                return $value;
+            }
+        }
+
+        return value($default);
+    }
+
+    public static function last(array $array, callable $callback = null, $default = null) : mixed
+    {
+        if (is_null($callback)) {
+            return empty($array) ? value($default) : end($array);
+        }
+
+        return static::first(array_reverse($array, true), $callback, $default);
+    }
+
+    public static function forget(array &$array, array|string|int|float $keys) : void
+    {
+        $original = &$array;
+
+        $keys = (array) $keys;
+
+        if (count($keys) === 0) {
+            return;
+        }
+
+        foreach ($keys as $key) {
+            // if the exact key exists in the top-level, remove it
+            if (static::exists($array, $key)) {
+                unset($array[$key]);
+
+                continue;
+            }
+
+            $parts = explode('.', $key);
+
+            // clean up before each pass
+            $array = &$original;
+
+            while (count($parts) > 1) {
+                $part = array_shift($parts);
+
+                if (isset($array[$part]) && static::accessible($array[$part])) {
+                    $array = &$array[$part];
+                } else {
+                    continue 2;
+                }
+            }
+
+            unset($array[array_shift($parts)]);
+        }
+    }
+
+    public static function crossJoin(iterable ...$arrays) : array
+    {
+        $results = [[]];
+
+        foreach ($arrays as $index => $array) {
+            $append = [];
+
+            foreach ($results as $product) {
+                foreach ($array as $item) {
+                    $product[$index] = $item;
+
+                    $append[] = $product;
+                }
+            }
+
+            $results = $append;
+        }
+
+        return $results;
+    }
+
+    public static function divide(array $array) : array
+    {
+        return [array_keys($array), array_values($array)];
+    }
+
+    public static function except(array $array, array|string|int|float $keys) : array
+    {
+        static::forget($array, $keys);
+
+        return $array;
+    }
+
+    public static function join(array $array, string $glue, string $finalGlue = '') : string
+    {
+        if ($finalGlue === '') {
+            return implode($glue, $array);
+        }
+
+        if (count($array) === 0) {
+            return '';
+        }
+
+        if (count($array) === 1) {
+            return end($array);
+        }
+
+        $finalItem = array_pop($array);
+
+        return implode($glue, $array).$finalGlue.$finalItem;
+    }
+
+    public static function only(array $array, array|string $keys) : array
+    {
+        return array_intersect_key($array, array_flip((array) $keys));
+    }
+
+    public static function map(array $array, callable $callback) : array
+    {
+        $keys = array_keys($array);
+
+        $items = array_map($callback, $array, $keys);
+
+        return array_combine($keys, $items);
+    }
+
+    public static function prepend(array $array, mixed $value, mixed $key = null) : array
+    {
+        if (func_num_args() == 2) {
+            array_unshift($array, $value);
+        } else {
+            $array = [$key => $value] + $array;
+        }
+
+        return $array;
+    }
+
+    public static function pull(array &$array, string $key, mixed $default = null) : mixed
+    {
+        $value = static::get($array, $key, $default);
+
+        static::forget($array, $key);
+
+        return $value;
+    }
+
+    public static function query(array $array) : string
+    {
+        return http_build_query($array, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    public static function random(array $array, int|null $number = null, bool $preserveKeys = false) : mixed
+    {
+        $requested = is_null($number) ? 1 : $number;
+
+        $count = count($array);
+
+        if ($requested > $count) {
+            throw new \InvalidArgumentException(
+                "You requested {$requested} items, but there are only {$count} items available."
+            );
+        }
+
+        if (is_null($number)) {
+            return $array[array_rand($array)];
+        }
+
+        if ((int) $number === 0) {
+            return [];
+        }
+
+        $keys = array_rand($array, $number);
+
+        $results = [];
+
+        if ($preserveKeys) {
+            foreach ((array) $keys as $key) {
+                $results[$key] = $array[$key];
+            }
+        } else {
+            foreach ((array) $keys as $key) {
+                $results[] = $array[$key];
+            }
+        }
+
+        return $results;
+    }
+
+    public static function shuffle(array $array, $seed = null) : array
+    {
+        if (is_null($seed)) {
+            shuffle($array);
+        } else {
+            mt_srand($seed);
+            shuffle($array);
+            mt_srand();
+        }
+
+        return $array;
+    }
+
+    public static function sortRecursive(array $array, int $options = SORT_REGULAR, bool $descending = false) : array
+    {
+        foreach ($array as &$value) {
+            if (is_array($value)) {
+                $value = static::sortRecursive($value, $options, $descending);
+            }
+        }
+
+        if (static::isAssoc($array)) {
+            $descending
+                ? krsort($array, $options)
+                : ksort($array, $options);
+        } else {
+            $descending
+                ? rsort($array, $options)
+                : sort($array, $options);
+        }
+
+        return $array;
+    }
+
+    public static function toCssClasses(array $array) : string
+    {
+        $classList = static::wrap($array);
+
+        $classes = [];
+
+        foreach ($classList as $class => $constraint) {
+            if (is_numeric($class)) {
+                $classes[] = $constraint;
+            } elseif ($constraint) {
+                $classes[] = $class;
+            }
+        }
+
+        return implode(' ', $classes);
+    }
+
+    public static function where(array $array, callable $callback) : array
+    {
+        return array_filter($array, $callback, ARRAY_FILTER_USE_BOTH);
+    }
+
+    public static function whereNotNull(array $array) : array
+    {
+        return static::where($array, function ($value) {
+            return ! is_null($value);
+        });
+    }
+
+    public static function wrap(mixed $value) : array
+    {
+        if (is_null($value)) {
+            return [];
+        }
+
+        return is_array($value) ? $value : [$value];
+    }
 }
