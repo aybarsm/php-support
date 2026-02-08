@@ -1,0 +1,49 @@
+{
+    "name": "aybarsm/php-support",
+    "version": "dev-main",
+    "description": "An opinionated PHP support library.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "aybarsm",
+        "php",
+        "support"
+    ],
+    "homepage": "https://www.github.com/aybarsm/php-support",
+    "support": {
+        "email": "dev@blrm.net"
+    },
+    "authors": [
+        {
+            "name": "Murat Aybars",
+            "email": "murat.aybars@blrm.net",
+            "homepage": "https://www.blrm.net",
+            "role": "Founder"
+        }
+    ],
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Aybarsm\\Support\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
