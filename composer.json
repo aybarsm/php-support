@@ -22,7 +22,8 @@
         }
     ],
     "require": {
-        "php": "^8.4"
+        "php": "^8.4",
+        "ext-mbstring": "*"
     },
     "require-dev": {
         "pestphp/pest": "^4.0.0"
@@ -32,7 +33,7 @@
             "Aybarsm\\Support\\": "src"
         },
         "files": [
-            "src/helpers.php"
+            "src/functions.php"
         ]
     },
     "autoload-dev": {
